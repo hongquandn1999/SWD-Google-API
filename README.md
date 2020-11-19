@@ -6,3 +6,7 @@
 # Config API, get information API
 
 - Get data and check if no authentication => must login
+
+# Login GG Drive and get information in google
+
+- Get data from gg when authentication successfully
