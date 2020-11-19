@@ -10,3 +10,7 @@
 # Login GG Drive and get information in google
 
 - Get data from gg when authentication successfully
+
+# Upload file
+
+- Use multer upload file

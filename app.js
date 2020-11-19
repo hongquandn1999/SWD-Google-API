@@ -1,11 +1,27 @@
 const express = require('express');
-
+const fs = require('fs');
 const app = express();
 const port = 5000;
 
 const { google } = require('googleapis');
 const OAuth2Data = require('./credential.json');
 
+
+const multer = require('multer');
+const { drive } = require('googleapis/build/src/apis/drive');
+
+var Storage = multer.diskStorage({
+    destination: function (req, file, callback) {
+        callback(null, "./images");
+    },
+    filename: function (req, file, callback) {
+        callback(null, file.fieldname + "_" + Date.now() + "_" + file.originalname);
+    },
+});
+
+var upload = multer({
+    storage: Storage,
+}).single("file"); //Field name and max count
 
 // get data from file credential.json
 
@@ -56,7 +72,8 @@ app.get('/', (req, res) => {
 
             res.render('successAuth', {
                 name: name,
-                pic: pic
+                pic: pic,
+                success: false
             })
 
         })
@@ -85,6 +102,49 @@ app.get('/google/callserver', (req, res) => {
             }
         })
     }
+})
+
+// Upload file
+app.post('/upload', (req, res) => {
+    upload(req, res, function (err) {
+        if (err) throw err
+        console.log(req.file.path);
+        const drive = google.drive({
+            version: "v3",
+            auth: oAuth2Clients
+        })
+
+        const fileMetadata = {
+            name: req.file.filename
+        }
+
+        const media = {
+            mimeType: req.file.mimetype,
+            body: fs.createReadStream(req.file.path)
+        }
+
+        drive.files.create(
+            {
+                resource: fileMetadata,
+                media: media,
+                fields: "id",
+            },
+            (err, file) => {
+                if (err) {
+                    // Handle error
+                    console.error(err);
+                } else {
+                    fs.unlinkSync(req.file.path)
+                    res.render("successAuth", { name: name, pic: pic, success: true })
+                }
+
+            }
+        );
+    })
+
+
+
+
 })
 
 app.listen(port, () => {
